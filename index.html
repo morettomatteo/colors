@@ -114,6 +114,8 @@
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 16px 0 40px; }
   .bar .group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .count { font-family: var(--mono); min-width: 2ch; text-align: center; }
+  .stepper, .stepper-ctrl { display: flex; align-items: center; gap: 8px; }
+  .stepper-label { display: none; color: var(--muted); font-size: 14px; }
   .hint { color: var(--muted); font-size: 14px; }
 
   /* Saved */
@@ -277,7 +279,8 @@
   .ct-meta strong { font-family: var(--mono); margin-right: 4px; }
   .ct-label { color: var(--muted); font-size: 13px; width: 100%; }
   .pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 8px; border: 1px solid var(--line); border-radius: 6px; }
-  .pill.fail { color: var(--muted); }
+  .pill.fail { color: var(--muted); text-decoration: line-through; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .conv-split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
   @media (max-width: 767px) { .conv-split { grid-template-columns: 1fr; } }
   .conv-table { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--surface); }
@@ -307,14 +310,25 @@
   @media (max-width: 767px) {
     .wrap { padding: 0 16px; }
     .strip { grid-auto-flow: row; height: auto; min-height: 0; }
-    .col { flex-direction: row; justify-content: space-between; min-height: 76px; padding: 8px 8px 8px 12px; gap: 8px; }
-    .tools { flex-direction: row; opacity: 1; }
-    .tool { width: 44px; height: 44px; }
-    .hex { font-size: 18px; }
-    .label { align-items: flex-start; }
-    .cname { text-align: left; max-width: 220px; }
+    .col { flex-direction: row; align-items: center; justify-content: space-between; min-height: 76px; padding: 8px 6px 8px 12px; gap: 8px; }
+    .label { order: -1; flex: 1; min-width: 0; width: auto; align-items: flex-start; }
+    .tools { flex-direction: row; flex: none; opacity: 1; gap: 0; }
+    .tool { width: 40px; height: 44px; }
+    .tool[data-icon="ph-copy"] { display: none; }
+    .hex { font-size: 18px; padding: 4px 8px; margin-left: -8px; }
+    .cname { text-align: left; width: 100%; max-width: 200px; margin-left: -8px; }
     .hide-sm { display: none; }
-    .bar { padding-bottom: 32px; }
+    .bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0 32px; }
+    .bar .group { display: contents; }
+    .bar .btn { justify-content: center; }
+    .stepper {
+      grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+      height: 48px; padding: 0 4px 0 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface);
+    }
+    .stepper .stepper-label { display: block; }
+    .stepper .btn.icon { border-color: transparent; background: none; }
+    .stepper-ctrl { display: flex; align-items: center; gap: 4px; }
+    .count { min-width: 3ch; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
@@ -343,9 +357,14 @@
       <div class="group">
         <button class="btn primary" id="genBtn"><i class="ph ph-shuffle" aria-hidden="true"></i>Generate <kbd class="hide-sm">Space</kbd></button>
         <button class="btn" id="newBtn"><i class="ph ph-file-plus" aria-hidden="true"></i>New palette</button>
-        <button class="btn icon" id="minusBtn" aria-label="Remove a color"><i class="ph ph-minus" aria-hidden="true"></i></button>
-        <span class="count" id="count" aria-live="polite">5</span>
-        <button class="btn icon" id="plusBtn" aria-label="Add a color"><i class="ph ph-plus" aria-hidden="true"></i></button>
+        <div class="stepper">
+          <span class="stepper-label">Colors in palette</span>
+          <div class="stepper-ctrl">
+            <button class="btn icon" id="minusBtn" aria-label="Remove a color"><i class="ph ph-minus" aria-hidden="true"></i></button>
+            <span class="count" id="count" aria-live="polite">5</span>
+            <button class="btn icon" id="plusBtn" aria-label="Add a color"><i class="ph ph-plus" aria-hidden="true"></i></button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -642,7 +661,7 @@
   }
   function tool(icon, label, fn) {
     var b = document.createElement("button");
-    b.className = "tool"; b.setAttribute("aria-label", label); b.title = label;
+    b.className = "tool"; b.dataset.icon = icon; b.setAttribute("aria-label", label); b.title = label;
     b.innerHTML = '<i class="ph ' + icon + '" aria-hidden="true"></i>';
     b.addEventListener("click", fn);
     return b;
@@ -994,18 +1013,31 @@
   }
   function palWith(hex) { return current.map(function (c, i) { return i === dIdx ? hex : c.hex; }); }
   function contrastHtml(hex) {
-    var bgs = [{ label: "White", hex: "#ffffff" }, { label: "Black", hex: "#000000" }];
-    palWith(hex).forEach(function (p, i) { if (i !== dIdx) bgs.push({ label: "Palette color " + (i + 1) + " (" + p.toUpperCase() + ")", hex: p }); });
+    // Fixed references: pure and soft versions of light and dark, matching the app's own surfaces.
+    var refs = [
+      { label: "White", hex: "#ffffff" }, { label: "Light background", hex: "#f6f6f4" },
+      { label: "Dark background", hex: "#17181b" }, { label: "Black", hex: "#000000" }
+    ];
     var pill = function (ok, txt) {
-      return '<span class="pill' + (ok ? "" : " fail") + '"><i class="ph ' + (ok ? "ph-check" : "ph-x") + '" aria-hidden="true"></i>' + txt + (ok ? "" : " fail") + "</span>";
+      return '<span class="pill' + (ok ? "" : " fail") + '"><i class="ph ' + (ok ? "ph-check" : "ph-x") + '" aria-hidden="true"></i>' + txt + '<span class="sr">' + (ok ? " pass" : " fail") + "</span></span>";
     };
-    return '<section class="d-row"><div class="d-row-head"><div><h3>Text contrast</h3><p>This color as text on other backgrounds</p></div></div><div class="ct-grid">' +
-      bgs.map(function (b) {
-        var r = ratio(hex, b.hex);
-        return '<div class="ct"><div class="ct-sample" style="background:' + b.hex + ";color:" + hex + '"><b>Aa</b><span>Sample text</span></div>' +
-          '<div class="ct-meta"><span class="ct-label">' + b.label + '</span><strong>' + r.toFixed(2) + ":1</strong>" +
-          pill(r >= 4.5, "AA") + pill(r >= 3, "AA Large") + pill(r >= 7, "AAA") + "</div></div>";
-      }).join("") + "</div></section>";
+    // textOnViewed: the viewed color is the background and the reference is the text color; otherwise the reverse.
+    var card = function (ref, label, viewedIsBg) {
+      var bg = viewedIsBg ? hex : ref, fg = viewedIsBg ? ref : hex, r = ratio(hex, ref);
+      return '<div class="ct"><div class="ct-sample" style="background:' + bg + ";color:" + fg + '"><b>Aa</b><span>Sample text</span></div>' +
+        '<div class="ct-meta"><span class="ct-label">' + label + '</span><strong>' + r.toFixed(2) + ":1</strong>" +
+        pill(r >= 4.5, "AA") + pill(r >= 3, "AA Large") + pill(r >= 7, "AAA") + "</div></div>";
+    };
+    var section = function (title, desc, cards) {
+      return '<section class="d-row"><div class="d-row-head"><div><h3>' + title + "</h3><p>" + desc + '</p></div></div><div class="ct-grid">' + cards + "</div></section>";
+    };
+    var others = palWith(hex).map(function (p, i) { return { p: p, i: i }; }).filter(function (o) { return o.i !== dIdx; });
+    return section("As text", "This color as text on light and dark backgrounds",
+        refs.map(function (r) { return card(r.hex, r.label + " " + r.hex.toUpperCase(), false); }).join("")) +
+      section("As background", "White and black text on this color",
+        refs.map(function (r) { return card(r.hex, r.label.replace(" background", "") + " text " + r.hex.toUpperCase(), true); }).join("")) +
+      (others.length ? section("Against your palette", "This color as text on each other palette color",
+        others.map(function (o) { return card(o.p, "Palette color " + (o.i + 1) + " " + o.p.toUpperCase(), false); }).join("")) : "");
   }
   function blindnessHtml(hex) {
     var pal = palWith(hex);
