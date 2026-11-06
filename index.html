@@ -204,6 +204,7 @@
     font-family: var(--mono); font-size: clamp(40px, 6.5vw, 76px); line-height: 1; letter-spacing: -0.01em; font-weight: 500;
     text-transform: uppercase; background: none; border: 0; padding: 0; color: inherit; border-radius: var(--radius);
   }
+  .d-closest[hidden] { display: none; }
   .d-closest { font-size: 14px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   .d-link { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; font-weight: 500; }
   .d-row2 { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
@@ -413,7 +414,7 @@
       <div class="d-main">
         <input class="d-name" id="dName" type="text" maxlength="30" placeholder="Name this color" autocomplete="off" spellcheck="false" aria-label="Color name">
         <button class="d-hex" id="dHex" aria-label="Copy hex"></button>
-        <div class="d-closest"><span id="dClosestText"></span><button class="d-link" id="dUseName">Use as name</button></div>
+        <div class="d-closest" id="dClosestRow" hidden><span id="dClosestText"></span><button class="d-link" id="dUseName">Use as name</button></div>
         <div class="d-row2">
           <label class="d-field"><span>#</span><input id="dHexInput" type="text" maxlength="7" autocomplete="off" spellcheck="false" aria-label="Hex value"></label>
           <input type="color" id="dPicker" aria-label="Pick a color">
@@ -560,7 +561,8 @@
       return n;
     };
     colors.forEach(function (c, i) {
-      var base = uniq(slug(c.name) || "color-" + (i + 1));
+      // unnamed colors fall back to their closest CSS color name
+      var base = uniq(slug(c.name) || slug(closestName(c.hex).name) || "color-" + (i + 1));
       if (scales && i > 0) out.push("");
       out.push("  --" + base + ": " + c.hex.toLowerCase() + ";");
       if (scales) scaleOf(c.hex).forEach(function (x) { out.push("  --" + uniq(base + "-" + x.step) + ": " + x.hex + ";"); });
@@ -643,7 +645,7 @@
       label.className = "label";
       var name = document.createElement("input");
       name.type = "text"; name.className = "cname"; name.value = c.name || ""; name.maxLength = 30;
-      name.placeholder = "Name"; name.autocomplete = "off"; name.spellcheck = false;
+      name.placeholder = closestName(c.hex).name; name.autocomplete = "off"; name.spellcheck = false;
       name.setAttribute("aria-label", "Name for " + c.hex);
       name.addEventListener("input", function () { c.name = name.value; });
       name.addEventListener("keydown", function (e) { if (e.key === "Enter") name.blur(); });
@@ -655,7 +657,7 @@
       picker.style.left = "50%"; picker.style.top = "40%";
       picker.addEventListener("input", function () {
         var n = normHex(picker.value);
-        if (n) { c.hex = n; col.style.setProperty("--c", n); col.style.setProperty("--fg", fgFor(n)); hex.textContent = n.slice(1); name.setAttribute("aria-label", "Name for " + n); }
+        if (n) { c.hex = n; col.style.setProperty("--c", n); col.style.setProperty("--fg", fgFor(n)); hex.textContent = n.slice(1); name.setAttribute("aria-label", "Name for " + n); name.placeholder = closestName(n).name; }
       });
 
       col.appendChild(tools); col.appendChild(label); col.appendChild(picker);
@@ -986,7 +988,7 @@
   }
   var dPrefix = "";
   function scalePrefixFor(hex) {
-    return slug(dPrefix) || slug($("dName").value) || "color-" + (dIdx + 1);
+    return slug(dPrefix) || slug($("dName").value) || slug(closestName(hex).name) || "color-" + (dIdx + 1);
   }
   function scaleHtml(hex) {
     var items = scaleOf(hex).map(function (x) { return { hex: x.hex, label: String(x.step), cur: x.hex === hex }; });
@@ -1087,6 +1089,12 @@
   var dIdx = 0, dViewed = "#ffffff", dTab = TABS[0];
   var closest = { name: "" };
   function dirty() { var c = current[dIdx]; return dViewed !== c.hex || $("dName").value.trim() !== (c.name || "").trim(); }
+  // Unnamed colors already use the closest CSS name (shown as the placeholder), so the suggestion row
+  // only appears once the color has its own, different name.
+  function syncClosestRow() {
+    var typed = $("dName").value.trim();
+    $("dClosestRow").hidden = !typed || typed.toLowerCase() === closest.name;
+  }
   function renderHero(skipInput) {
     var h = $("dHero");
     h.style.setProperty("--c", dViewed); h.style.setProperty("--fg", fgFor(dViewed));
@@ -1095,7 +1103,9 @@
     $("dPicker").value = dViewed;
     $("dCount").textContent = (dIdx + 1) + " / " + current.length;
     closest = closestName(dViewed);
+    $("dName").placeholder = closest.name;
     $("dClosestText").textContent = (closest.exact ? "CSS color: " : "Closest CSS color: ") + closest.name;
+    syncClosestRow();
     $("dApply").disabled = !dirty();
     $("dReset").hidden = !dirty();
   }
@@ -1133,7 +1143,7 @@
   $("dPrev").addEventListener("click", function () { stepColor(-1); });
   $("dNext").addEventListener("click", function () { stepColor(1); });
   document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("detail").hidden) closeDetail(); });
-  $("dName").addEventListener("input", function () { $("dApply").disabled = !dirty(); $("dReset").hidden = !dirty(); });
+  $("dName").addEventListener("input", function () { $("dApply").disabled = !dirty(); $("dReset").hidden = !dirty(); syncClosestRow(); });
   $("dReset").addEventListener("click", function () { loadDetail(); });
   $("dName").addEventListener("keydown", function (e) { if (e.key === "Enter") e.target.blur(); });
   $("dHexInput").addEventListener("input", function (e) {
@@ -1144,7 +1154,7 @@
     var n = normHex(e.target.value);
     if (n) { dViewed = n; renderHero(); renderBody(); }
   });
-  $("dUseName").addEventListener("click", function () { $("dName").value = closest.name; $("dApply").disabled = !dirty(); $("dReset").hidden = !dirty(); });
+  $("dUseName").addEventListener("click", function () { $("dName").value = closest.name; $("dApply").disabled = !dirty(); $("dReset").hidden = !dirty(); syncClosestRow(); });
   function copyViewed() { copy(dViewed, "Copied " + dViewed.toUpperCase(), dViewed); }
   $("dHex").addEventListener("click", copyViewed);
   $("dCopy").addEventListener("click", copyViewed);
