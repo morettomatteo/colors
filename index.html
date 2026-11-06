@@ -44,7 +44,7 @@
   }
   button, input { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  :focus-visible { outline: 1.5px solid var(--accent); outline-offset: 1px; }
 
   .wrap { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
 
@@ -130,7 +130,7 @@
   }
   .mini button span { opacity: 0; transition: opacity .15s; }
   .mini button:hover span, .mini button:focus-visible span { opacity: 1; }
-  .mini button:focus-visible { outline-color: var(--fg); outline-offset: -3px; }
+  .mini button:focus-visible { outline-color: var(--fg); outline-offset: -2px; }
   .card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 4px 2px; }
   .card-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-date { color: var(--muted); font-size: 13px; }
@@ -213,7 +213,7 @@
     border: 1px solid color-mix(in srgb, var(--fg) 35%, transparent); font-family: var(--mono);
   }
   .d-field input { width: 84px; background: none; border: 0; color: inherit; font-family: var(--mono); text-transform: uppercase; outline: none; }
-  .d-field:focus-within { outline: 2px solid var(--fg); outline-offset: 2px; }
+  .d-field:focus-within { outline: 1.5px solid var(--fg); outline-offset: 1px; }
   #dPicker::-webkit-color-swatch-wrapper { padding: 4px; }
   #dPicker::-webkit-color-swatch { border: 0; border-radius: 6px; }
   #dPicker::-moz-color-swatch { border: 0; border-radius: 6px; }
@@ -257,7 +257,7 @@
   }
   .sw-main em { font-style: normal; font-size: 12px; }
   .sw-main span { font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
-  .sw-main:focus-visible { outline-color: var(--fg); outline-offset: -4px; }
+  .sw-main:focus-visible { outline-color: var(--fg); outline-offset: -3px; }
   .sw-open {
     position: absolute; top: 6px; right: 6px; width: 32px; height: 32px; display: grid; place-items: center;
     border: 0; border-radius: 8px; background: none; color: inherit; font-size: 18px; opacity: 0; transition: opacity .15s;
@@ -299,7 +299,7 @@
   }
   .conv-row + .conv-row { border-top: 1px solid var(--line); }
   .conv-row:hover { background: color-mix(in srgb, var(--surface) 92%, var(--ink)); }
-  .conv-row:focus-visible { outline-offset: -3px; }
+  .conv-row:focus-visible { outline-offset: -2px; }
   .conv-row span { color: var(--muted); font-size: 14px; }
   .conv-row b { font-family: var(--mono); font-weight: 500; font-size: 15px; overflow-wrap: anywhere; }
   .conv-row i { color: var(--muted); font-size: 18px; opacity: 0; transition: opacity .15s; }
