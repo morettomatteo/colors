@@ -106,9 +106,14 @@
     width: 90%; max-width: 180px; text-align: center; background: none; border: 1px solid transparent;
     border-radius: var(--radius); padding: 4px 8px; color: inherit; font-weight: 500; font-size: 14px;
   }
-  .cname::placeholder { color: color-mix(in srgb, var(--fg) 62%, transparent); }
+  /* the fallback (closest CSS) name is shown at full strength, same as a typed name */
+  .cname::placeholder { color: var(--fg); opacity: 1; }
   .cname:hover { border-color: color-mix(in srgb, var(--fg) 25%, transparent); }
-  .cname:focus-visible { outline-color: var(--fg); }
+  /* text fields get a filled state instead of the outline ring */
+  .cname:focus-visible {
+    outline: none; background: color-mix(in srgb, var(--fg) 14%, transparent);
+    border-color: color-mix(in srgb, var(--fg) 55%, transparent);
+  }
   .picker { position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none; }
 
   .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; padding: 16px 0 40px; }
@@ -155,6 +160,9 @@
     border-radius: var(--radius);
   }
   dialog input[type=text]::placeholder { color: var(--muted); }
+  dialog input[type=text]:focus-visible, .pf input:focus-visible, .name-input:focus-visible {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent);
+  }
   dialog .help { color: var(--muted); font-size: 13px; margin: 8px 0 20px; }
   dialog .row { display: flex; gap: 8px; justify-content: flex-end; }
   dialog .mini { margin-bottom: 20px; height: 56px; }
@@ -199,7 +207,8 @@
     width: min(420px, 100%); background: none; border: 0; border-bottom: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
     color: inherit; font-size: 22px; font-weight: 500; padding: 4px 0; border-radius: 0;
   }
-  .d-name::placeholder { color: color-mix(in srgb, var(--fg) 62%, transparent); }
+  .d-name::placeholder { color: var(--fg); opacity: 1; }
+  .d-name:focus-visible { outline: none; border-bottom-color: var(--fg); box-shadow: 0 1px 0 var(--fg); }
   .d-hex {
     font-family: var(--mono); font-size: clamp(40px, 6.5vw, 76px); line-height: 1; letter-spacing: -0.01em; font-weight: 500;
     text-transform: uppercase; background: none; border: 0; padding: 0; color: inherit; border-radius: var(--radius);
