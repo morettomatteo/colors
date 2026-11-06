@@ -358,7 +358,7 @@
   <div class="wrap">
     <div class="brand"><i class="ph ph-palette" aria-hidden="true"></i>Colors</div>
     <div class="head-actions">
-      <button class="btn" id="themeBtn" aria-label="Toggle theme"><i class="ph ph-circle-half" aria-hidden="true"></i></button>
+      <button class="btn icon" id="themeBtn" aria-label="Switch to dark mode"><i class="ph ph-moon" aria-hidden="true"></i></button>
       <button class="btn primary" id="saveBtn"><i class="ph ph-bookmark-simple" aria-hidden="true"></i>Save palette</button>
     </div>
   </div>
@@ -846,13 +846,23 @@
     var stored = null;
     try { stored = localStorage.getItem(THEME_KEY); } catch (e) {}
     if (stored) document.documentElement.setAttribute("data-theme", stored);
+    var mq = matchMedia("(prefers-color-scheme: dark)");
+    var now = function () { return document.documentElement.getAttribute("data-theme") || (mq.matches ? "dark" : "light"); };
+    // the button shows the mode you would switch to: a moon in light mode, a sun in dark mode
+    var paint = function () {
+      var dark = now() === "dark", btn = $("themeBtn");
+      btn.innerHTML = '<i class="ph ' + (dark ? "ph-sun" : "ph-moon") + '" aria-hidden="true"></i>';
+      btn.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+      btn.title = dark ? "Switch to light mode" : "Switch to dark mode";
+    };
     $("themeBtn").addEventListener("click", function () {
-      var cur = document.documentElement.getAttribute("data-theme") ||
-        (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      var next = cur === "dark" ? "light" : "dark";
+      var next = now() === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-theme", next);
       try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+      paint();
     });
+    if (mq.addEventListener) mq.addEventListener("change", paint);
+    paint();
   })();
 
   /* ---------- color details ---------- */
