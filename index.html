@@ -238,6 +238,14 @@
   .d-row h3 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
   .d-row p { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
   .d-row .btn { height: 36px; }
+  /* rows with an action button keep it on the right, never wrapping below the title */
+  .d-row-head.keep { flex-wrap: nowrap; align-items: center; }
+  .d-row-head.keep > div { min-width: 0; }
+  .pal-btn { flex: none; }
+  @media (max-width: 767px) {
+    .pal-btn { width: 36px; padding: 0; justify-content: center; }
+    .pal-btn .pal-label { display: none; }
+  }
   .sw-grid { display: grid; grid-template-columns: repeat(var(--n), 1fr); border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
   .sw { position: relative; display: flex; min-height: 120px; background: var(--c); color: var(--fg); }
   .sw-check { display: block; line-height: 0; }
@@ -954,7 +962,7 @@
     return 4;
   }
   function rowHtml(title, desc, items, interactive, extra) {
-    return '<section class="d-row"><div class="d-row-head"><div><h3>' + title + "</h3><p>" + desc + "</p></div>" + (extra || "") + "</div>" +
+    return '<section class="d-row"><div class="d-row-head' + (extra ? " keep" : "") + '"><div><h3>' + title + "</h3><p>" + desc + "</p></div>" + (extra || "") + "</div>" +
       '<div class="sw-grid" style="--n:' + items.length + ";--m:" + mobileCols(items.length) +
       ";--ls:" + ((mobileCols(items.length) - items.length % mobileCols(items.length)) % mobileCols(items.length) + 1) + '">' +
       items.map(function (it) { return swHtml(it.hex, it.label, it.cur, interactive); }).join("") + "</div></section>";
@@ -1007,7 +1015,8 @@
     ];
     return sets.map(function (st) {
       var items = st[2].map(function (x) { return { hex: x, label: "", cur: x === hex }; });
-      var btn = '<button class="btn" data-pal="' + st[2].join(",") + '"><i class="ph ph-swatches" aria-hidden="true"></i>Use as palette</button>';
+      var btn = '<button class="btn pal-btn" data-pal="' + st[2].join(",") + '" aria-label="Use as palette" title="Use as palette">' +
+        '<i class="ph ph-swatches" aria-hidden="true"></i><span class="pal-label">Use as palette</span></button>';
       return rowHtml(st[0], st[1], items, true, btn);
     }).join("");
   }
